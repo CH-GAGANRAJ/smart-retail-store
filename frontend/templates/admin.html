@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Smart Retail Queue</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Smart Retail Admin</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="logoutButton">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+    <div class="card border-0 shadow-lg overflow-hidden">
+        <div class="card-header bg-primary text-white">
+            <h2 class="card-title mb-0">
+                <i class="fas fa-plus-circle me-2"></i>Add New Product
+            </h2>
+        </div>
+        <div class="card-body p-4">
+            <form id="addProductForm">
+                    <div class="mb-3">
+                        <label for="productName" class="form-label">Product Name</label>
+                        <input type="text" class="form-control rounded-pill" id="productName" placeholder="e.g., Samsung Smart TV" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="productPrice" class="form-label">Price ($)</label>
+                        <input type="number" step="0.01" class="form-control rounded-pill" id="productPrice" placeholder="e.g., 499.99" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="productUrl" class="form-label">Product URL</label>
+                        <input type="url" class="form-control rounded-pill" id="productUrl" placeholder="e.g., https://www.walmart.com/product/12345" required>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success rounded-pill btn-lg">Add Product & Generate QR</button>
+                    </div>
+                    <div id="responseMessage" class="alert mt-3 d-none" role="alert"></div>
+                </form>
+            </div>
+        </div>
+
+        <div id="qrCodeSection" class="card mt-4 border-0 shadow-sm d-none fade-in">
+                <div class="card-header bg-light">
+                    <h4 class="mb-0">
+                        <i class="fas fa-qrcode me-2"></i>Generated QR Code
+                    </h4>
+                </div>
+                <div class="card-body text-center p-4">
+                    <img id="qrCodeImage" class="img-fluid mb-3"
+                         style="max-width: 250px; border: 1px solid #dee2e6; padding: 10px;"
+                         alt="Generated QR Code">
+                    <p class="text-muted mb-0">Scan this QR code to view product details</p>
+                </div>
+        </div>
+    </div>
+</div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Basic authentication check (for hackathon, assumes user_id and role are set on login)
+            const userId = localStorage.getItem('user_id');
+            const userRole = localStorage.getItem('user_role');
+
+            if (!userId || userRole !== 'admin') {
+                window.location.href = '/login'; // Redirect to login if not authenticated as admin
+            }
+
+            document.getElementById('logoutButton').addEventListener('click', function() {
+                localStorage.removeItem('user_id');
+                localStorage.removeItem('user_role');
+                window.location.href = '/login';
+            });
+
+            const addProductForm = document.getElementById('addProductForm');
+            const responseMessageDiv = document.getElementById('responseMessage');
+            const qrCodeSection = document.getElementById('qrCodeSection');
+            const qrCodeImage = document.getElementById('qrCodeImage');
+
+            addProductForm.addEventListener('submit', async function(event) {
+                event.preventDefault();
+
+                const name = document.getElementById('productName').value;
+                const price = parseFloat(document.getElementById('productPrice').value);
+                const product_url = document.getElementById('productUrl').value;
+
+                responseMessageDiv.classList.add('d-none'); // Hide previous messages
+                responseMessageDiv.classList.remove('alert-success', 'alert-danger');
+
+                try {
+                    const formData = new FormData();
+                    formData.append('name', name);
+                    formData.append('price', price);
+                    formData.append('product_url', product_url);
+
+                    const response = await fetch('/admin/add-product', {
+                        method: 'POST',
+                        // For FormData, do NOT set 'Content-Type' header, browser sets it automatically
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        responseMessageDiv.textContent = data.message;
+                        responseMessageDiv.classList.remove('d-none');
+                        responseMessageDiv.classList.add('alert-success');
+
+                        // Display QR code
+                        // CORRECTED LINE: Use data.qr_path directly as it's already relative to /static/
+                        qrCodeImage.src = `/static/${data.qr_path}`;
+                        qrCodeSection.classList.remove('d-none');
+
+                        // Clear form
+                        addProductForm.reset();
+                    } else {
+                        responseMessageDiv.textContent = data.detail || 'Failed to add product.';
+                        responseMessageDiv.classList.remove('d-none');
+                        responseMessageDiv.classList.add('alert-danger');
+                        qrCodeSection.classList.add('d-none'); // Hide QR section on error
+                    }
+                } catch (error) {
+                    console.error('Error adding product:', error);
+                    responseMessageDiv.textContent = 'An error occurred. Please try again.';
+                    responseMessageDiv.classList.remove('d-none');
+                    responseMessageDiv.classList.add('alert-danger');
+                    qrCodeSection.classList.add('d-none'); // Hide QR section on error
+                }
+            });
+        });
+    </script>
+</body>
+</html>

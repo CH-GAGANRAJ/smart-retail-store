@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Cart - Smart Retail Queue</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">Smart Retail Customer</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Back to Scanner</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="logoutButton">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+
+    <!-- Updated Cart Section -->
+    <div class="container mt-4">
+        <div class="card shadow-lg overflow-hidden">
+            <div class="card-header bg-primary text-white">
+                <h2 class="card-title mb-0">
+                    <i class="fas fa-shopping-cart me-2"></i>Your Shopping Cart
+                </h2>
+            </div>
+            <div class="card-body p-0">
+                <div id="cartItemsContainer" class="list-group list-group-flush">
+                    <!-- Cart items will be loaded here -->
+                    <div id="emptyCartMessage" class="text-center py-5">
+                        <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">Your cart is empty</h4>
+                        <p class="text-muted">Scan products to add items to your cart</p>
+                        <a href="/" class="btn btn-primary rounded-pill mt-3">
+                            <i class="fas fa-qrcode me-2"></i>Start Scanning
+                        </a>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-light border-top">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">Total:</h4>
+                        <h3 class="mb-0 text-success" id="cartTotal">$0.00</h3>
+                    </div>
+                    <button id="proceedToCheckoutButton" class="btn btn-primary btn-lg w-100 mt-4 rounded-pill" disabled>
+                        <i class="fas fa-credit-card me-2"></i>Proceed to Checkout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            const userId = localStorage.getItem('user_id');
+            const userRole = localStorage.getItem('user_role');
+
+            if (!userId || userRole !== 'customer') {
+                window.location.href = '/login';
+                return;
+            }
+
+            document.getElementById('logoutButton').addEventListener('click', function() {
+                localStorage.removeItem('user_id');
+                localStorage.removeItem('user_role');
+                window.location.href = '/login';
+            });
+
+            const cartItemsContainer = document.getElementById('cartItemsContainer');
+            const emptyCartMessage = document.getElementById('emptyCartMessage');
+            const cartTotalElem = document.getElementById('cartTotal');
+            const proceedToCheckoutButton = document.getElementById('proceedToCheckoutButton');
+
+            async function fetchCartItems() {
+                try {
+                    const response = await fetch(`/customer/cart/${userId}`); // Assuming a new endpoint for fetching cart
+                    const data = await response.json();
+
+                    cartItemsContainer.innerHTML = ''; // Clear existing items
+                    let total = 0;
+
+                    if (data.cart_items && data.cart_items.length > 0) {
+                        emptyCartMessage.classList.add('d-none');
+                        data.cart_items.forEach(item => {
+                            const itemTotal = item.product.price * item.quantity;
+                            total += itemTotal;
+
+                            const cartItemDiv = document.createElement('div');
+                            cartItemDiv.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center', 'cart-item');
+                            cartItemDiv.innerHTML = `
+                                <div>
+                                    <h5 class="mb-1">${item.product.name}</h5>
+                                    <small class="text-muted">$${item.product.price.toFixed(2)} x ${item.quantity}</small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="fw-bold">$${itemTotal.toFixed(2)}</span>
+                                    <div class="btn-group btn-group-sm ms-3" role="group">
+                                        <button type="button" class="btn btn-outline-secondary decrease-quantity" data-cart-id="${item.id}" data-quantity="${item.quantity}"><i class="fas fa-minus"></i></button>
+                                        <button type="button" class="btn btn-outline-secondary increase-quantity" data-cart-id="${item.id}" data-quantity="${item.quantity}"><i class="fas fa-plus"></i></button>
+                                        <button type="button" class="btn btn-outline-danger remove-item" data-cart-id="${item.id}"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+                            `;
+                            cartItemsContainer.appendChild(cartItemDiv);
+                        });
+                        proceedToCheckoutButton.disabled = false;
+                    } else {
+                        emptyCartMessage.classList.remove('d-none');
+                        proceedToCheckoutButton.disabled = true;
+                    }
+                    cartTotalElem.textContent = `$${total.toFixed(2)}`;
+                } catch (error) {
+                    console.error('Error fetching cart items:', error);
+                    emptyCartMessage.textContent = 'Error loading cart. Please try again.';
+                    emptyCartMessage.classList.remove('d-none');
+                    proceedToCheckoutButton.disabled = true;
+                }
+            }
+
+            // Event listeners for quantity change and remove
+            cartItemsContainer.addEventListener('click', async function(event) {
+                const target = event.target.closest('button');
+                if (!target) return;
+
+                const cartId = target.dataset.cartId;
+                let newQuantity = parseInt(target.dataset.quantity);
+
+                if (target.classList.contains('decrease-quantity')) {
+                    newQuantity = Math.max(1, newQuantity - 1); // Minimum quantity is 1
+                    await updateCartItem(cartId, newQuantity);
+                } else if (target.classList.contains('increase-quantity')) {
+                    newQuantity += 1;
+                    await updateCartItem(cartId, newQuantity);
+                } else if (target.classList.contains('remove-item')) {
+                    if (confirm('Are you sure you want to remove this item?')) { // Use custom modal in production
+                        await removeCartItem(cartId);
+                    }
+                }
+            });
+
+            async function updateCartItem(cartId, quantity) {
+                try {
+                    const response = await fetch('/customer/update-cart', { // Assuming a new endpoint for updating cart
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ cart_item_id: parseInt(cartId), quantity: quantity })
+                    });
+                    if (response.ok) {
+                        fetchCartItems(); // Re-fetch to update UI
+                    } else {
+                        const errorData = await response.json();
+                        alert(errorData.detail || 'Failed to update cart item.');
+                    }
+                } catch (error) {
+                    console.error('Error updating cart item:', error);
+                    alert('An error occurred while updating cart item.');
+                }
+            }
+
+            async function removeCartItem(cartId) {
+                try {
+                    const response = await fetch(`/customer/remove-from-cart/${cartId}`, { // Assuming a new endpoint for removing cart
+                        method: 'DELETE'
+                    });
+                    if (response.ok) {
+                        fetchCartItems(); // Re-fetch to update UI
+                    } else {
+                        const errorData = await response.json();
+                        alert(errorData.detail || 'Failed to remove cart item.');
+                    }
+                } catch (error) {
+                    console.error('Error removing cart item:', error);
+                    alert('An error occurred while removing cart item.');
+                }
+            }
+
+            // Initial fetch of cart items
+            fetchCartItems();
+
+            proceedToCheckoutButton.addEventListener('click', async function() {
+                try {
+                    const response = await fetch('/payments/create-checkout-session', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ user_id: parseInt(userId) })
+                    });
+                    const data = await response.json();
+                    if (response.ok) {
+                        window.location.href = data.url; // Redirect to Stripe checkout
+                    } else {
+                        alert(data.detail || 'Failed to initiate checkout.');
+                    }
+                } catch (error) {
+                    console.error('Error initiating checkout:', error);
+                    alert('An error occurred while initiating checkout.');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

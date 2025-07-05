@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Smart Retail Queue</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="bg-light">
+    <div class="container d-flex justify-content-center align-items-center min-vh-100">
+        <div class="card shadow-lg p-4 custom-card-width">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">Welcome to Smart Retail Queue</h2>
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control rounded-pill" id="username" placeholder="Enter your username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control rounded-pill" id="password" placeholder="Enter your password" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label d-block">Login As:</label>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="role" id="roleAdmin" value="admin" checked>
+                            <label class="form-check-label" for="roleAdmin">Admin</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="role" id="roleCustomer" value="customer">
+                            <label class="form-check-label" for="roleCustomer">Customer</label>
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary rounded-pill btn-lg">Login</button>
+                    </div>
+                    <p class="text-center mt-3">
+                        Don't have an account? <a href="/register">Register here</a>
+                    </p>
+                    <div id="errorMessage" class="alert alert-danger mt-3 d-none" role="alert"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const role = document.querySelector('input[name="role"]:checked').value;
+            const errorMessageDiv = document.getElementById('errorMessage');
+
+            errorMessageDiv.classList.add('d-none'); // Hide previous error message
+
+            try {
+                const response = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password, role })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Store user ID and role in localStorage or sessionStorage
+                    localStorage.setItem('user_id', data.user_id);
+                    localStorage.setItem('user_role', data.role);
+                    errorMessageDiv.classList.add('d-none'); // Hide error message
+
+                    if (role === 'admin') {
+                        window.location.href = '/admin'; // Redirect to admin page
+                    } else {
+                        window.location.href = '/'; // Redirect to customer page
+                    }
+                } else {
+                    errorMessageDiv.textContent = data.detail || 'Login failed. Please try again.';
+                    errorMessageDiv.classList.remove('d-none'); // Show error message
+                }
+            } catch (error) {
+                console.error('Error during login:', error);
+                errorMessageDiv.textContent = 'An error occurred. Please try again later.';
+                errorMessageDiv.classList.remove('d-none'); // Show error message
+            }
+        });
+    </script>
+</body>
+</html>

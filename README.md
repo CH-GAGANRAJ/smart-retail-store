@@ -1,9 +1,7 @@
 # Smart Retail Store
 
-<div align="center">
 ![Screenshot 2025-07-05 172113](https://github.com/user-attachments/assets/ace69c52-359e-4abf-83fb-d82b97aeea07)
 *A modern solution to reduce retail checkout queues*
-</div>
 
 ## ✨ Features
 

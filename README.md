@@ -2,7 +2,7 @@
 
 <div align="center">
   
-![Retail System](https://via.placeholder.com/800x400?text=Smart+Retail+System+Demo)  
+https://youtu.be/FzKuPeYQEY4
 *A modern solution to reduce retail checkout queues*
 
 </div>

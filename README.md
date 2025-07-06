@@ -2,8 +2,9 @@
 
 <div align="center">
   
-## 🎥 Watch the Demo
-[YouTube Demo Video](https://youtube.com/watch?v=FzKuPeYQEY4)
+## 📺 Demo Video
+
+[![Smart Retail System Demo](https://img.youtube.com/vi/FzKuPeYQEY4/0.jpg)](https://www.youtube.com/watch?v=FzKuPeYQEY4)
 *A modern solution to reduce retail checkout queues*
 
 </div>

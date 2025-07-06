@@ -2,7 +2,8 @@
 
 <div align="center">
   
-https://youtu.be/FzKuPeYQEY4
+## 🎥 Watch the Demo
+[YouTube Demo Video](https://youtube.com/watch?v=https://youtu.be/FzKuPeYQEY4)
 *A modern solution to reduce retail checkout queues*
 
 </div>
